@@ -553,7 +553,7 @@ static memcached_return_t backoff_handling(memcached_server_write_instance_st se
     1) If autoeject is enabled we do that.
     2) If not? We go into timeout again, there is much else to do :(
   */
-  if (server->server_failure_counter >= server->root->server_failure_limit)
+  if ((not server->options.is_dead) and (server->server_failure_counter >= server->root->server_failure_limit))
   {
     /*
       We just auto_eject if we hit this point 
@@ -561,6 +561,7 @@ static memcached_return_t backoff_handling(memcached_server_write_instance_st se
     if (_is_auto_eject_host(server->root))
     {
       set_last_disconnected_host(server);
+      server->options.is_dead=true; // set the server to be dead permanently
       run_distribution((memcached_st *)server->root);
 
       return memcached_set_error(*server, MEMCACHED_SERVER_MARKED_DEAD, MEMCACHED_AT);

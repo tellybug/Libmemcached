@@ -155,13 +155,13 @@ static memcached_return_t update_continuum(memcached_st *ptr)
     ptr->ketama.next_distribution_rebuild= 0;
     for (uint32_t host_index= 0; host_index < memcached_server_count(ptr); ++host_index)
     {
-      if (list[host_index].next_retry <= now.tv_sec)
+      if ((not list[host_index].options.is_dead) and (list[host_index].next_retry <= now.tv_sec))
       {
         live_servers++;
       }
       else
       {
-        if (ptr->ketama.next_distribution_rebuild == 0 or list[host_index].next_retry < ptr->ketama.next_distribution_rebuild)
+        if ((not list[host_index].options.is_dead) and (ptr->ketama.next_distribution_rebuild == 0 or list[host_index].next_retry < ptr->ketama.next_distribution_rebuild))
         {
           ptr->ketama.next_distribution_rebuild= list[host_index].next_retry;
         }
@@ -202,7 +202,7 @@ static memcached_return_t update_continuum(memcached_st *ptr)
   {
     for (uint32_t host_index = 0; host_index < memcached_server_count(ptr); ++host_index)
     {
-      if (is_auto_ejecting == false or list[host_index].next_retry <= now.tv_sec)
+      if ((is_auto_ejecting == false) or (list[host_index].next_retry <= now.tv_sec) or (not list[host_index].options.is_dead))
       {
         total_weight += list[host_index].weight;
       }
@@ -211,7 +211,7 @@ static memcached_return_t update_continuum(memcached_st *ptr)
 
   for (uint32_t host_index= 0; host_index < memcached_server_count(ptr); ++host_index)
   {
-    if (is_auto_ejecting and list[host_index].next_retry > now.tv_sec)
+    if (is_auto_ejecting and ((list[host_index].options.is_dead) or (list[host_index].next_retry > now.tv_sec)))
     {
       continue;
     }
